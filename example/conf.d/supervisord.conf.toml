@@ -1,8 +1,0 @@
-[template]
-src   = "supervisord.conf"
-dest  = "/etc/supervisord.conf"
-owner = "root"
-group = "root"
-mode  = "0755"
-
-check_cmd = "/app/bin/check {{ .src }}"

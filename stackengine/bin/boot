@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# This script is designed to be run inside the container
+#
+
+echo "==> Starting Stackengine"
+
+if [ "x$ETCD" != "x" ]; then
+  echo "==> ETCD set to $ETCD.  starting stackengine with etcd support."
+  export ETCD_PATH="/services/stackengine"}
+  export ETCD_OPTIONS="--no-sync -C $ETCD"
+  # wait for etcd to be available
+  until etcdctl $ETCD_OPTIONS ls >/dev/null 2>&1; do
+    echo "==> waiting for etcd at $ETCD..."
+    sleep 1
+  done
+  # wait until etcd has discarded potentially stale values
+  sleep 31
+fi
+
+LEADER=`etcdctl $ETCD_OPTIONS ls /services/controller-8001 2>&1 | grep -E '^/services' | head -1`
+COUNT=`etcdctl $ETCD_OPTIONS ls /services/controller-8001 2>&1 | grep -E '^/services' | wc -l`
+
+if [ $COUNT -gt 1 ]; then
+  LEADER_IP=`etcdctl $ETCD_OPTIONS get $LEADER | awk -F: '{ print $1}'`
+  # Make sure I wasn't given my own IP
+  while [ "$LEADER_IP" == "$HOST" ]; do
+    LEADER=`etcdctl $ETCD_OPTIONS ls /services/controller-8001 2>&1 | head -1 | grep -E '^/services'`
+    LEADER_IP=`etcdctl $ETCD_OPTIONS get $LEADER | awk -F: '{ print $1}'`
+  done
+  echo "-----> Leader found at $LEADER_IP"
+  sleep 5
+  /app/bin/stackengine -admin -bind=${HOST} -debug=all -join=$LEADER_IP
+else
+  echo "-----> I might already be the leader?"
+  sleep 5
+  /app/bin/stackengine -admin -bind=${HOST} -debug=all
+fi
+
+exit 1

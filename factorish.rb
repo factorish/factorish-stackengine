@@ -42,10 +42,30 @@ end
     repository: "progrium/registrator",
     docker_options: [
       "-v /var/run/docker.sock:/tmp/docker.sock:ro",
-      "-h $HOSTNAME",
-      "--name registrator"
-    ],
+      "-h $HOSTNAME"
+   ],
     command: "-ttl 30 -ttl-refresh 20 -ip $COREOS_PRIVATE_IPV4 etcd://$COREOS_PRIVATE_IPV4:4001/services"
+  },
+  {
+    name: "cadvisor",
+    repository: "google/cadvisor",
+    docker_options: [
+      '--volume=/:/rootfs:ro',
+      '--volume=/var/run:/var/run:rw',
+      '--volume=/sys:/sys:ro',
+      '--volume=/var/lib/docker/:/var/lib/docker:ro',
+      '--publish=8080:8080'
+    ],
+    command: ""
+  },
+  {
+    name: "logspout",
+    repository: "progrium/logspout",
+    docker_options: [
+      '-v /var/run/docker.sock:/tmp/docker.sock:ro',
+      '--publish=8081:8000'
+    ],
+    command: ''
   }
 ]
 
@@ -53,18 +73,20 @@ end
 # Describe your applications in this hash
 @applications = [
   {
-    name: "example",
-    repository: "factorish/example",
+    name: "stackengine-controller",
+    repository: "stackengine/controller",
     docker_options: [
-      "-p 8080:8080",
-      "-e PUBLISH=8080",
-      "-e HOST=$COREOS_PRIVATE_IPV4"
+      "--publish 8000:8000",
+      "--publish 8001:8001",
+      "--publish 8002:8002",
+      "-e HOST=$COREOS_PRIVATE_IPV4",
+      "-e ETCD=$COREOS_PRIVATE_IPV4:4001",
+      "--volume /var/run/docker.sock:/var/run/docker.sock"
     ],
-    dockerfile: "/home/core/share/example",
+    dockerfile: "/home/core/share/stackengine",
     command: ""
   }
 ]
-
 
 def core01_start_registry()
   $core01_start_registry=<<-EOF

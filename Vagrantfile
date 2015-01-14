@@ -72,28 +72,23 @@ Vagrant.configure('2') do |config|
           c.vm.provision :shell, inline: core01_fetch_image(app)
         end
         @applications.each do |app|
-          case $mode
-          when 'develop'
-            c.vm.provision :shell, inline: core01_build_image(app)
-          when 'test'
-            c.vm.provision :shell, inline: core01_fetch_image(app)
-          else
-            die "$mode NOT SUPPORTED"
-          end
+          c.vm.provision :shell, inline: core01_build_image(app)
         end
       else
-        @services.each do |app|
-          c.vm.provision :shell, inline: fetch_image(app)
+        if $mode == 'develop'
+          @services.each do |app|
+            c.vm.provision :shell, inline: fetch_image(app)
+          end
+          @applications.each do |app|
+            c.vm.provision :shell, inline: fetch_image(app)
+          end
+          @services.each do |app|
+            c.vm.provision :shell, inline: run_image(app)
+          end
+          @applications.each do |app|
+            c.vm.provision :shell, inline: run_image(app)
+          end
         end
-        @applications.each do |app|
-          c.vm.provision :shell, inline: fetch_image(app)
-        end
-      end
-      @services.each do |app|
-        c.vm.provision :shell, inline: run_image(app)
-      end
-      @applications.each do |app|
-        c.vm.provision :shell, inline: run_image(app)
       end
     end
   end
