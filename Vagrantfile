@@ -82,12 +82,14 @@ Vagrant.configure('2') do |config|
           @applications.each do |app|
             c.vm.provision :shell, inline: fetch_image(app)
           end
-          @services.each do |app|
-            c.vm.provision :shell, inline: run_image(app)
-          end
-          @applications.each do |app|
-            c.vm.provision :shell, inline: run_image(app)
-          end
+        end
+      end
+      if $mode == 'develop'
+        @services.each do |app|
+          c.vm.provision :shell, inline: run_image(app)
+        end
+        @applications.each do |app|
+          c.vm.provision :shell, inline: run_image(app)
         end
       end
     end
